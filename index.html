@@ -569,18 +569,18 @@
                 statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Søger efter lokalplaner...</p></div>';
 
                 // Step 2: Query Plandata WFS for lokalplaner at this location
-                // Try multiple WFS query approaches
                 console.log('Querying WFS with coordinates:', { lat, lng });
                 
-                // First, try with a bounding box instead of INTERSECTS
-                const buffer = 0.0001; // Small buffer around the point
+                // Use a bounding box query with servicename parameter
+                const buffer = 0.001; // Slightly larger buffer ~100 meters
                 const bbox = `${lng - buffer},${lat - buffer},${lng + buffer},${lat + buffer}`;
                 
                 const wfsUrl = `https://geoserver.plandata.dk/geoserver/wfs?` +
+                    `servicename=wfs&` +
                     `service=WFS&` +
-                    `version=2.0.0&` +
+                    `version=1.1.0&` +
                     `request=GetFeature&` +
-                    `typeName=pdk:theme-pdk_lokalplan_vedtaget_v&` +
+                    `typeName=theme_pdk_lokalplan_vedtaget_v&` +
                     `outputFormat=application/json&` +
                     `srsName=EPSG:4326&` +
                     `bbox=${bbox},EPSG:4326`;
@@ -602,8 +602,6 @@
                 // Filter results to only include plans that actually contain our point
                 let filteredFeatures = data.features;
                 if (filteredFeatures && filteredFeatures.length > 0) {
-                    // The bbox query might return plans near the point, so we filter to exact matches
-                    // This is a simple check - in production you'd use proper geometry intersection
                     console.log(`Found ${filteredFeatures.length} plans in bounding box`);
                 }
 
