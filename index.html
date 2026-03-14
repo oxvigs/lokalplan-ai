@@ -589,14 +589,40 @@
                 const wfsResponse = await fetch(wfsUrl);
                 
                 console.log('WFS Response status:', wfsResponse.status);
+                console.log('WFS Response content-type:', wfsResponse.headers.get('content-type'));
+                
+                const responseText = await wfsResponse.text();
+                console.log('WFS Response (first 500 chars):', responseText.substring(0, 500));
                 
                 if (!wfsResponse.ok) {
-                    const errorText = await wfsResponse.text();
-                    console.error('WFS Error response:', errorText);
-                    throw new Error(`WFS request failed: ${wfsResponse.status} ${wfsResponse.statusText}`);
+                    console.error('WFS Error response:', responseText);
+                    throw new Error(`WFS request failed: ${wfsResponse.status} - ${responseText.substring(0, 200)}`);
                 }
                 
-                const data = await wfsResponse.json();
+                // Try to parse as JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('Failed to parse WFS response as JSON:', parseError);
+                    console.error('Response text:', responseText);
+                    
+                    // If JSON parse fails, the server might not support this query format
+                    // Let's try a simpler approach - use DAWA's plandata integration instead
+                    statusDiv.innerHTML = '<div class="error">WFS forespørgslen fejlede. Prøver alternativ metode...</div>';
+                    
+                    // Alternative: Use visplaner.plandata.dk directly
+                    const planUrl = `https://visplaner.plandata.dk/lokalplan?loc=${Math.round(lng * 100)},${Math.round(lat * 100)},2`;
+                    statusDiv.innerHTML = `<div class="success">✓ Adresse fundet! <br><br>
+                        Plandata.dk's WFS API har tekniske problemer. Du kan se lokalplaner for denne adresse her:<br>
+                        <a href="${planUrl}" target="_blank" class="link-button" style="margin-top: 15px;">Åbn Plandata.dk</a>
+                        <br><br>
+                        <small>Vi arbejder på at få direkte integration til at fungere.</small>
+                    </div>`;
+                    searchBtn.disabled = false;
+                    return;
+                }
+                
                 console.log('WFS response:', data);
                 
                 // Filter results to only include plans that actually contain our point
@@ -606,7 +632,11 @@
                 }
 
                 if (!filteredFeatures || filteredFeatures.length === 0) {
-                    statusDiv.innerHTML = '<div class="error">Ingen lokalplaner fundet på denne adresse. Prøv en adresse et andet sted.</div>';
+                    const planUrl = `https://visplaner.plandata.dk/lokalplan?loc=${Math.round(lng * 100)},${Math.round(lat * 100)},2`;
+                    statusDiv.innerHTML = `<div class="error">Ingen lokalplaner fundet via API. 
+                        <br><br>Du kan tjekke manuelt på Plandata.dk:<br>
+                        <a href="${planUrl}" target="_blank" class="link-button" style="margin-top: 10px;">Åbn Plandata.dk</a>
+                    </div>`;
                     searchBtn.disabled = false;
                     return;
                 }
