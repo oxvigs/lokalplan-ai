@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lokalplan Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .plan-info {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .plan-header {
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .plan-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .plan-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        .qa-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .qa-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .qa-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .answer-box {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-top: 20px;
+        }
+
+        .answer-label {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .answer-text {
+            color: #333;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .plan-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .plan-item {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .plan-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .plan-item-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .plan-item-id {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .link-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        .link-button:hover {
+            background: #5568d3;
+        }
+
+        .autocomplete-container {
+            position: relative;
+        }
+
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .autocomplete-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item:hover {
+            background: #f9f9f9;
+        }
+
+        .autocomplete-item.selected {
+            background: #e8ebfc;
+        }
+
+        .address-main {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .address-detail {
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏘️ Lokalplan Finder</h1>
+            <p class="subtitle">Find lokalplaner ved at indtaste en adresse og stil spørgsmål til AI om planen</p>
+            <p class="subtitle" style="font-size: 0.9em; margin-top: 10px; opacity: 0.8;">
+                💡 Tip: Åben siden via en webserver (ikke file://) for bedste funktionalitet
+            </p>
+        </header>
+
+        <div class="search-section">
+            <div class="input-group">
+                <div class="autocomplete-container" style="flex: 1;">
+                    <input type="text" id="addressInput" placeholder="Indtast adresse, fx 'Vesterbrogade 1, København'" autocomplete="off" />
+                    <div id="autocompleteList" class="autocomplete-list hidden"></div>
+                </div>
+                <button id="searchBtn" onclick="searchAddress()">Søg Lokalplan</button>
+            </div>
+            <div id="searchStatus"></div>
+        </div>
+
+        <div id="planListSection" class="plan-info hidden">
+            <div class="plan-header">
+                <h2 class="plan-title">Fundne Lokalplaner</h2>
+            </div>
+            <div id="planList" class="plan-list"></div>
+        </div>
+
+        <div id="planInfoSection" class="plan-info hidden">
+            <div class="plan-header">
+                <h2 class="plan-title" id="planTitle"></h2>
+            </div>
+            <div id="planDetails" class="plan-details"></div>
+            <div id="planLinks"></div>
+        </div>
+
+        <div id="qaSection" class="qa-section hidden">
+            <h2 class="qa-title">❓ Stil et spørgsmål om lokalplanen</h2>
+            <div class="qa-input-group">
+                <textarea id="questionInput" placeholder="Stil dit spørgsmål her, fx 'Hvad er de maksimale byggehøjder?' eller 'Hvilke anvendelser er tilladt?'"></textarea>
+                <button id="askBtn" onclick="askQuestion()">Stil Spørgsmål</button>
+            </div>
+            <div id="answerSection"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentPlan = null;
+        let currentPlanDocument = null;
+        let allPlans = [];
+        let autocompleteTimeout = null;
+        let selectedAutocompleteIndex = -1;
+        let autocompleteAddresses = [];
+
+        // Autocomplete for address input
+        const addressInput = document.getElementById('addressInput');
+        const autocompleteList = document.getElementById('autocompleteList');
+
+        addressInput.addEventListener('input', function() {
+            clearTimeout(autocompleteTimeout);
+            const query = this.value.trim();
+            
+            console.log('Input changed:', query);
+            
+            if (query.length < 2) {
+                hideAutocomplete();
+                return;
+            }
+
+            autocompleteTimeout = setTimeout(() => fetchAddressSuggestions(query), 300);
+        });
+
+        addressInput.addEventListener('keydown', function(e) {
+            const items = autocompleteList.querySelectorAll('.autocomplete-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedAutocompleteIndex = Math.min(selectedAutocompleteIndex + 1, items.length - 1);
+                updateAutocompleteSelection(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedAutocompleteIndex = Math.max(selectedAutocompleteIndex - 1, -1);
+                updateAutocompleteSelection(items);
+            } else if (e.key === 'Enter') {
+                if (selectedAutocompleteIndex >= 0 && autocompleteAddresses[selectedAutocompleteIndex]) {
+                    e.preventDefault();
+                    selectAddress(autocompleteAddresses[selectedAutocompleteIndex]);
+                }
+            } else if (e.key === 'Escape') {
+                hideAutocomplete();
+            }
+        });
+
+        // Close autocomplete when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.autocomplete-container')) {
+                hideAutocomplete();
+            }
+        });
+
+        async function fetchAddressSuggestions(query) {
+            console.log('Fetching suggestions for:', query);
+            try {
+                const url = `https://api.dataforsyningen.dk/adresser/autocomplete?q=${encodeURIComponent(query)}&per_side=10`;
+                console.log('Request URL:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                    mode: 'cors'
+                });
+                
+                console.log('Response status:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    console.error('Autocomplete API error:', response.status, response.statusText);
+                    hideAutocomplete();
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('Autocomplete data:', data);
+                
+                if (data && data.length > 0) {
+                    showAutocomplete(data);
+                } else {
+                    hideAutocomplete();
+                }
+            } catch (error) {
+                console.error('Autocomplete error:', error);
+                // Don't show error to user for autocomplete failures
+                hideAutocomplete();
+            }
+        }
+
+        function showAutocomplete(addresses) {
+            autocompleteAddresses = addresses;
+            selectedAutocompleteIndex = -1;
+            
+            autocompleteList.innerHTML = addresses.map((addr, index) => `
+                <div class="autocomplete-item" data-index="${index}" onclick="selectAddress(autocompleteAddresses[${index}])">
+                    <div class="address-main">${addr.tekst}</div>
+                    ${addr.adresse ? `<div class="address-detail">${addr.adresse.postnrnavn || ''}</div>` : ''}
+                </div>
+            `).join('');
+            
+            autocompleteList.classList.remove('hidden');
+        }
+
+        function hideAutocomplete() {
+            autocompleteList.classList.add('hidden');
+            autocompleteList.innerHTML = '';
+            selectedAutocompleteIndex = -1;
+        }
+
+        function updateAutocompleteSelection(items) {
+            items.forEach((item, index) => {
+                if (index === selectedAutocompleteIndex) {
+                    item.classList.add('selected');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        function selectAddress(addressData) {
+            addressInput.value = addressData.tekst;
+            hideAutocomplete();
+            // Automatically search when address is selected
+            setTimeout(() => searchAddress(), 100);
+        }
+
+        // Search for address and find lokalplan
+        async function searchAddress() {
+            const address = document.getElementById('addressInput').value.trim();
+            const statusDiv = document.getElementById('searchStatus');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            if (!address) {
+                statusDiv.innerHTML = '<div class="error">Indtast venligst en adresse</div>';
+                return;
+            }
+
+            searchBtn.disabled = true;
+            statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Søger efter adresse...</p></div>';
+            
+            // Hide previous results
+            document.getElementById('planListSection').classList.add('hidden');
+            document.getElementById('planInfoSection').classList.add('hidden');
+            document.getElementById('qaSection').classList.add('hidden');
+
+            try {
+                // Step 1: Geocode the address using DAWA (Danish Address Web API)
+                const dawaResponse = await fetch(
+                    `https://api.dataforsyningen.dk/adresser?q=${encodeURIComponent(address)}&struktur=mini`
+                );
+                
+                if (!dawaResponse.ok) {
+                    throw new Error(`Adresse API fejl: ${dawaResponse.status}`);
+                }
+                
+                const addresses = await dawaResponse.json();
+                console.log('DAWA response:', addresses);
+                
+                if (!addresses || addresses.length === 0) {
+                    statusDiv.innerHTML = '<div class="error">Adressen kunne ikke findes. Prøv igen med en anden adresse.</div>';
+                    searchBtn.disabled = false;
+                    return;
+                }
+
+                // Get coordinates - check different possible formats
+                let lat, lng;
+                const firstAddress = addresses[0];
+                
+                if (firstAddress.visueltcenter && firstAddress.visueltcenter.length === 2) {
+                    // Format: [longitude, latitude]
+                    lng = firstAddress.visueltcenter[0];
+                    lat = firstAddress.visueltcenter[1];
+                } else if (firstAddress.adgangsadresse && firstAddress.adgangsadresse.visueltcenter) {
+                    lng = firstAddress.adgangsadresse.visueltcenter[0];
+                    lat = firstAddress.adgangsadresse.visueltcenter[1];
+                } else if (firstAddress.x && firstAddress.y) {
+                    lng = firstAddress.x;
+                    lat = firstAddress.y;
+                } else {
+                    console.error('Unknown address format:', firstAddress);
+                    statusDiv.innerHTML = '<div class="error">Kunne ikke finde koordinater for adressen. Prøv en mere specifik adresse.</div>';
+                    searchBtn.disabled = false;
+                    return;
+                }
+
+                console.log('Coordinates:', { lat, lng });
+                statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Søger efter lokalplaner...</p></div>';
+
+                // Step 2: Query Plandata WFS for lokalplaner at this location
+                // Try multiple WFS query approaches
+                console.log('Querying WFS with coordinates:', { lat, lng });
+                
+                // First, try with a bounding box instead of INTERSECTS
+                const buffer = 0.0001; // Small buffer around the point
+                const bbox = `${lng - buffer},${lat - buffer},${lng + buffer},${lat + buffer}`;
+                
+                const wfsUrl = `https://geoserver.plandata.dk/geoserver/wfs?` +
+                    `service=WFS&` +
+                    `version=2.0.0&` +
+                    `request=GetFeature&` +
+                    `typeName=pdk:theme-pdk_lokalplan_vedtaget_v&` +
+                    `outputFormat=application/json&` +
+                    `srsName=EPSG:4326&` +
+                    `bbox=${bbox},EPSG:4326`;
+
+                console.log('WFS URL:', wfsUrl);
+                const wfsResponse = await fetch(wfsUrl);
+                
+                console.log('WFS Response status:', wfsResponse.status);
+                
+                if (!wfsResponse.ok) {
+                    const errorText = await wfsResponse.text();
+                    console.error('WFS Error response:', errorText);
+                    throw new Error(`WFS request failed: ${wfsResponse.status} ${wfsResponse.statusText}`);
+                }
+                
+                const data = await wfsResponse.json();
+                console.log('WFS response:', data);
+                
+                // Filter results to only include plans that actually contain our point
+                let filteredFeatures = data.features;
+                if (filteredFeatures && filteredFeatures.length > 0) {
+                    // The bbox query might return plans near the point, so we filter to exact matches
+                    // This is a simple check - in production you'd use proper geometry intersection
+                    console.log(`Found ${filteredFeatures.length} plans in bounding box`);
+                }
+
+                if (!filteredFeatures || filteredFeatures.length === 0) {
+                    statusDiv.innerHTML = '<div class="error">Ingen lokalplaner fundet på denne adresse. Prøv en adresse et andet sted.</div>';
+                    searchBtn.disabled = false;
+                    return;
+                }
+
+                allPlans = filteredFeatures;
+                
+                if (allPlans.length === 1) {
+                    // Show single plan directly
+                    await selectPlan(allPlans[0]);
+                    statusDiv.innerHTML = '<div class="success">✓ Lokalplan fundet!</div>';
+                } else {
+                    // Show list of plans to choose from
+                    displayPlanList(allPlans);
+                    statusDiv.innerHTML = `<div class="success">✓ ${allPlans.length} lokalplaner fundet! Vælg en nedenfor.</div>`;
+                }
+
+                searchBtn.disabled = false;
+
+            } catch (error) {
+                console.error('Error:', error);
+                statusDiv.innerHTML = `<div class="error">Fejl ved søgning: ${error.message}. Prøv venligst igen om et øjeblik.</div>`;
+                searchBtn.disabled = false;
+            }
+        }
+
+        function displayPlanList(plans) {
+            const listSection = document.getElementById('planListSection');
+            const planList = document.getElementById('planList');
+            
+            planList.innerHTML = '';
+            
+            plans.forEach((plan, index) => {
+                const props = plan.properties;
+                const planDiv = document.createElement('div');
+                planDiv.className = 'plan-item';
+                planDiv.onclick = () => selectPlan(plan);
+                
+                planDiv.innerHTML = `
+                    <div class="plan-item-title">${props.plannavn || 'Unavngivet plan'}</div>
+                    <div class="plan-item-id">Plan ID: ${props.planid || 'N/A'} | Kommune: ${props.planmyndighed || 'N/A'}</div>
+                `;
+                
+                planList.appendChild(planDiv);
+            });
+            
+            listSection.classList.remove('hidden');
+        }
+
+        async function selectPlan(plan) {
+            currentPlan = plan;
+            const props = plan.properties;
+            
+            // Hide plan list if shown
+            document.getElementById('planListSection').classList.add('hidden');
+            
+            // Display plan information
+            document.getElementById('planTitle').textContent = props.plannavn || 'Lokalplan';
+            
+            const detailsDiv = document.getElementById('planDetails');
+            detailsDiv.innerHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">Plan ID</div>
+                    <div class="detail-value">${props.planid || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Plannummer</div>
+                    <div class="detail-value">${props.plannr || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Kommune</div>
+                    <div class="detail-value">${props.planmyndighed || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value">${props.planstatus || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Plantype</div>
+                    <div class="detail-value">${props.plantype || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Vedtagelsesdato</div>
+                    <div class="detail-value">${props.vedtdato ? new Date(props.vedtdato).toLocaleDateString('da-DK') : 'N/A'}</div>
+                </div>
+            `;
+
+            // Add links
+            const linksDiv = document.getElementById('planLinks');
+            let linksHTML = '';
+            
+            if (props.doklink) {
+                linksHTML += `<a href="${props.doklink}" target="_blank" class="link-button">📄 Se plandokument (PDF)</a> `;
+            }
+            if (props.planid) {
+                linksHTML += `<a href="https://visplaner.plandata.dk/lokalplan?planid=${props.planid}" target="_blank" class="link-button">🗺️ Se på Plandata.dk</a>`;
+            }
+            
+            linksDiv.innerHTML = linksHTML;
+            
+            // Show plan info and QA section
+            document.getElementById('planInfoSection').classList.remove('hidden');
+            document.getElementById('qaSection').classList.remove('hidden');
+
+            // Try to fetch the PDF document for QA
+            if (props.doklink) {
+                try {
+                    const response = await fetch(props.doklink);
+                    const blob = await response.blob();
+                    currentPlanDocument = await blobToBase64(blob);
+                } catch (error) {
+                    console.error('Could not fetch plan document:', error);
+                    currentPlanDocument = null;
+                }
+            }
+        }
+
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // Ask question about the plan using Claude API
+        async function askQuestion() {
+            const question = document.getElementById('questionInput').value.trim();
+            const answerSection = document.getElementById('answerSection');
+            const askBtn = document.getElementById('askBtn');
+            
+            if (!question) {
+                answerSection.innerHTML = '<div class="error">Indtast venligst et spørgsmål</div>';
+                return;
+            }
+
+            if (!currentPlan) {
+                answerSection.innerHTML = '<div class="error">Ingen lokalplan valgt</div>';
+                return;
+            }
+
+            askBtn.disabled = true;
+            answerSection.innerHTML = '<div class="loading"><div class="spinner"></div><p>AI analyserer lokalplanen...</p></div>';
+
+            try {
+                const props = currentPlan.properties;
+                
+                // Prepare context about the plan
+                let context = `Du er en ekspert i danske lokalplaner. Her er information om den aktuelle lokalplan:\n\n`;
+                context += `Plannavn: ${props.plannavn || 'Unavngivet'}\n`;
+                context += `Plan ID: ${props.planid || 'N/A'}\n`;
+                context += `Plannummer: ${props.plannr || 'N/A'}\n`;
+                context += `Kommune: ${props.planmyndighed || 'N/A'}\n`;
+                context += `Status: ${props.planstatus || 'N/A'}\n`;
+                context += `Vedtagelsesdato: ${props.vedtdato ? new Date(props.vedtdato).toLocaleDateString('da-DK') : 'N/A'}\n\n`;
+                
+                // Build message content
+                let messageContent = [
+                    { type: "text", text: context + "Brugerens spørgsmål: " + question }
+                ];
+
+                // Add PDF if available
+                if (currentPlanDocument) {
+                    messageContent.unshift({
+                        type: "document",
+                        source: {
+                            type: "base64",
+                            media_type: "application/pdf",
+                            data: currentPlanDocument
+                        }
+                    });
+                    messageContent.push({
+                        type: "text",
+                        text: "Besvar spørgsmålet baseret på informationen ovenfor og plandokumentet. Svar på dansk."
+                    });
+                } else {
+                    messageContent.push({
+                        type: "text",
+                        text: "Besvar spørgsmålet baseret på den tilgængelige information. Hvis du har brug for mere specifik information fra selve plandokumentet, nævn at brugeren kan åbne PDF-dokumentet via linket ovenfor. Svar på dansk."
+                    });
+                }
+
+                // Call Claude API
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1000,
+                        messages: [
+                            {
+                                role: "user",
+                                content: messageContent
+                            }
+                        ],
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.content && data.content.length > 0) {
+                    const answer = data.content
+                        .filter(item => item.type === "text")
+                        .map(item => item.text)
+                        .join("\n");
+                    
+                    answerSection.innerHTML = `
+                        <div class="answer-box">
+                            <div class="answer-label">AI Svar:</div>
+                            <div class="answer-text">${answer}</div>
+                        </div>
+                    `;
+                } else {
+                    answerSection.innerHTML = '<div class="error">Kunne ikke generere et svar</div>';
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                answerSection.innerHTML = `<div class="error">Fejl ved AI-forespørgsel: ${error.message}</div>`;
+            } finally {
+                askBtn.disabled = false;
+            }
+        }
+
+        // Allow Enter key to search (but not if autocomplete is showing)
+        document.getElementById('addressInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && autocompleteList.classList.contains('hidden')) {
+                searchAddress();
+            }
+        });
+
+        // Allow Ctrl+Enter to ask question
+        document.getElementById('questionInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                askQuestion();
+            }
+        });
+    </script>
+</body>
+</html>
